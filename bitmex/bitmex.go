@@ -13,6 +13,8 @@ type Response struct {
 	Data      []interface{} `json:"data,omitempty"`
 }
 
+// DecodeMessage decodes the raw JSON from a BitMEX API response
+// and returns a Response
 func DecodeMessage(message []byte) (Response, error) {
 	var res Response
 	err := json.Unmarshal(message, &res)

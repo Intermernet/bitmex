@@ -33,6 +33,7 @@ type MasterConfig struct {
 	Dev    Config
 }
 
+// LoadConfig loads the JSON comfig file located at path
 func LoadConfig(path string) (Config, error) {
 	config, err := LoadMasterConfig(path)
 	if err != nil {
@@ -45,6 +46,7 @@ func LoadConfig(path string) (Config, error) {
 	return config.Master, nil
 }
 
+// LoadMasterConfig loads the JSON comfig file located at path
 func LoadMasterConfig(path string) (MasterConfig, error) {
 	file, err := os.Open(path)
 	if err != nil {
