@@ -2,41 +2,65 @@ package main
 
 import (
 	"fmt"
-	"github.com/vmpartner/bitmex/bitmex"
-	"github.com/vmpartner/bitmex/config"
-	"github.com/vmpartner/bitmex/rest"
-	"github.com/vmpartner/bitmex/tools"
-	"github.com/vmpartner/bitmex/websocket"
+	"log"
 	"strings"
+
+	"github.com/Intermernet/bitmex/bitmex"
+	"github.com/Intermernet/bitmex/config"
+	"github.com/Intermernet/bitmex/rest"
+	"github.com/Intermernet/bitmex/websocket"
 )
 
 // Usage example
 func main() {
 
 	// Load config
-	cfg := config.LoadConfig("config.json")
+	cfg, err := config.LoadConfig("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	ctx := rest.MakeContext(cfg.Key, cfg.Secret, cfg.Host, cfg.Timeout)
 
 	// Get wallet
 	w, response, err := rest.GetWallet(ctx)
-	tools.CheckErr(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("Status: %v, wallet amount: %v\n", response.StatusCode, w.Amount)
 
 	// Connect to WS
-	conn := websocket.Connect(cfg.Host)
+	conn, err := websocket.Connect(cfg.Host)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer conn.Close()
 
 	// Listen read WS
 	chReadFromWS := make(chan []byte, 100)
-	go websocket.ReadFromWSToChannel(conn, chReadFromWS)
+	go func() {
+		err := websocket.ReadFromWSToChannel(conn, chReadFromWS)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	// Listen write WS
 	chWriteToWS := make(chan interface{}, 100)
-	go websocket.WriteFromChannelToWS(conn, chWriteToWS)
+
+	go func() {
+		err := websocket.WriteFromChannelToWS(conn, chWriteToWS)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	// Authorize
-	chWriteToWS <- websocket.GetAuthMessage(cfg.Key, cfg.Secret)
+	auth, err := websocket.GetAuthMessage(cfg.Key, cfg.Secret)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+	chWriteToWS <- auth
 	// Read first response message
 	message := <-chReadFromWS
 	if !strings.Contains(string(message), "Welcome to the BitMEX") {
@@ -47,9 +71,11 @@ func main() {
 	// Read auth response success
 	message = <-chReadFromWS
 	res, err := bitmex.DecodeMessage(message)
-	tools.CheckErr(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if res.Success != true || res.Request.(map[string]interface{})["op"] != "authKey" {
-		panic("No auth response success")
+		log.Fatal("No auth response success")
 	}
 
 	// Listen websocket before subscribe
@@ -57,7 +83,9 @@ func main() {
 		for {
 			message := <-chReadFromWS
 			res, err := bitmex.DecodeMessage(message)
-			tools.CheckErr(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			// Your logic here
 			fmt.Printf("%+v\n", res)

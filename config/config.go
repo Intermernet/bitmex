@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/vmpartner/bitmex/tools"
 	"os"
 )
 
@@ -34,23 +33,29 @@ type MasterConfig struct {
 	Dev    Config
 }
 
-func LoadConfig(path string) Config {
-	config := LoadMasterConfig(path)
+func LoadConfig(path string) (Config, error) {
+	config, err := LoadMasterConfig(path)
+	if err != nil {
+		return Config{}, err
+	}
 	if config.IsDev {
-		return config.Dev
+		return config.Dev, nil
 	}
 
-	return config.Master
+	return config.Master, nil
 }
 
-func LoadMasterConfig(path string) MasterConfig {
+func LoadMasterConfig(path string) (MasterConfig, error) {
 	file, err := os.Open(path)
-	tools.CheckErr(err)
+	if err != nil {
+		return MasterConfig{}, err
+	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	config := MasterConfig{}
 	err = decoder.Decode(&config)
-	tools.CheckErr(err)
-
-	return config
+	if err != nil {
+		return MasterConfig{}, err
+	}
+	return config, nil
 }

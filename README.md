@@ -1,4 +1,6 @@
 # Bitmex API
+Forked from orignal code at github.com/vmpartner/bitmex
+
 Packages for work with bitmex rest and websocket API on golang.  
 Target of this packages make easy access to bitmex API including testnet platform.
 
@@ -9,12 +11,17 @@ Please see full example in main.go
 ####  REST
 ```
 // Load config
-cfg := config.LoadConfig("config.json")
+cfg, err := config.LoadConfig("config.json")
+if err != nil {
+    log.Fatal(err)
+}
 ctx := rest.MakeContext(cfg.Key, cfg.Secret, cfg.Host)
 
 // Get wallet
 wallet, response, err := rest.GetWallet(ctx)
-tools.CheckErr(err)
+if err != nil {
+    log.Fatal(err)
+}
 fmt.Printf("Status: %v, wallet amount: %v\n", response.StatusCode, wallet.Amount)
 
 // Place order
@@ -28,36 +35,60 @@ params := map[string]interface{}{
     "execInst": "ParticipateDoNotInitiate",
 }
 order, response, err := rest.NewOrder(ctx, params)
-tools.CheckErr(err)
+if err != nil {
+    log.Fatal(err)
+}
 fmt.Printf("Order: %+v, Response: %+v\n", order, response)
 ```
 
 #### Websocket
 ```
 // Load config
-cfg := config.LoadConfig("config.json")
+cfg, err := config.LoadConfig("config.json")
+if err != nil {
+    log.Fatal(err)
+}
 
 // Connect to WS
-conn := websocket.Connect(cfg.Host)
+conn, err := websocket.Connect(cfg.Host)
+if err != nil {
+    log.Fatal(err)
+}
 defer conn.Close()
 
 // Listen read WS
 chReadFromWS := make(chan []byte, 100)
-go websocket.ReadFromWSToChannel(conn, chReadFromWS)
+go func() {
+    err != websocket.ReadFromWSToChannel(conn, chReadFromWS)
+    if err != nil {
+        log.Fatal(err)
+    }
+}()
 
 // Listen write WS
 chWriteToWS := make(chan interface{}, 100)
-go websocket.WriteFromChannelToWS(conn, chWriteToWS)
+go func() {
+    err != websocket.WriteFromChannelToWS(conn, chWriteToWS)
+    if err != nil {
+        log.Fatal(err)
+    }
+}()
 
 // Authorize
-chWriteToWS <- websocket.GetAuthMessage(cfg.Key, cfg.Secret)
+auth, err != websocket.GetAuthMessage(cfg.Key, cfg.Secret)
+if err != nil {
+    log.Fatal(err)
+}
+chWriteToWS <- auth
 
 // Listen
 go func() {
     for {
         message := <-chReadFromWS
         res, err := bitmex.DecodeMessage(message)
-        tools.CheckErr(err)
+        if err != nil {
+            log.Fatal(err)
+        }
 
         // Business logic
         switch res.Table {
@@ -89,7 +120,8 @@ go func() {
 Example of usage look in main.go
 
 ## More
-I will be glad of any support. Thank you!
+This is forked from github.com/vmpartner/bitmex
+Support the original author! Thank you!
 ```
 eth: 0x3e9b92625c49Bfd41CCa371D1e4A1f0d4c25B6fC
 btc: 35XDoFSA8QeM26EnCyhQPTMBZm4S1DvncE

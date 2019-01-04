@@ -1,38 +1,46 @@
 package websocket
 
 import (
-	"testing"
-	"time"
 	"fmt"
 	"strings"
+	"testing"
+	"time"
 )
 
 func TestConnectMaster(t *testing.T) {
-	conn := Connect("www.bitmex.com")
+	conn, err := Connect("www.bitmex.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
 	if conn == nil {
 		t.Error("No connect to ws")
 	}
 }
 
 func TestConnectDev(t *testing.T) {
-	conn := Connect("testnet.bitmex.com")
+	conn, err := Connect("testnet.bitmex.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
 	if conn == nil {
 		t.Error("No connect to testnet ws")
 	}
 }
 
 func TestConnectFail(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		}
-	}()
-	Connect("")
+	_, err := Connect("")
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+
 }
 
 func TestWorkerReadMessages(t *testing.T) {
 	chReaderMessage := make(chan []byte)
-	conn := Connect("testnet.bitmex.com")
+	conn, err := Connect("testnet.bitmex.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
 	go ReadFromWSToChannel(conn, chReaderMessage)
 	message := <-chReaderMessage
 	if message == nil {
@@ -43,7 +51,10 @@ func TestWorkerReadMessages(t *testing.T) {
 
 func TestWorkerWriteMessages(t *testing.T) {
 
-	conn := Connect("testnet.bitmex.com")
+	conn, err := Connect("testnet.bitmex.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
 
 	// Read
 	chReadFromWS := make(chan []byte, 10)

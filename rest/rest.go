@@ -2,8 +2,9 @@ package rest
 
 import (
 	"context"
-	"github.com/vmpartner/bitmex/swagger"
 	"net/http"
+
+	"github.com/Intermernet/bitmex/swagger"
 )
 
 func MakeContext(key string, secret string, host string, timeout int64) context.Context {
