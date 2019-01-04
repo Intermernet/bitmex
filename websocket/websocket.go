@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Message is a BitMEX websocket message
 type Message struct {
 	Op   string        `json:"op,omitempty"`
 	Args []interface{} `json:"args,omitempty"`
